@@ -1,4 +1,4 @@
-use std::io::{BufRead, BufReader, Read, Write};
+use std::io::{BufRead, BufReader, Write};
 use std::net::TcpListener;
 
 fn main() {
@@ -20,8 +20,13 @@ fn main() {
                 let request_target = request_buffer_it.next().unwrap_or("/");
 
                 let response = match request_target {
-                    "/" => "HTTP/1.1 200 OK\r\n\r\n",
-                    _ => "HTTP/1.1 404 Not Found\r\n\r\n",
+                    "/" => String::from("HTTP/1.1 200 OK\r\n\r\n"),
+                    _ if request_target.starts_with("/echo/") => {
+                        let echo_response = request_target.trim_start_matches("/echo/");
+                        let echo_response_length = echo_response.len();
+                        format!("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", echo_response_length, echo_response)
+                    }
+                    _ => String::from("HTTP/1.1 404 Not Found\r\n\r\n"),
                 };
 
                 // Write the response to stream
