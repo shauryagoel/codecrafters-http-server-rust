@@ -11,8 +11,8 @@ fn main() {
         match stream {
             Ok(mut _stream) => {
                 // Read the request from the stream
-                let buf_reader = BufReader::new(&_stream);
-                let request_line = buf_reader.lines().next().unwrap().unwrap();
+                let mut buf_reader = BufReader::new(&_stream).lines();
+                let request_line = buf_reader.next().unwrap().unwrap();
 
                 let mut request_buffer_it = request_line.split_ascii_whitespace();
 
@@ -21,6 +21,16 @@ fn main() {
 
                 let response = match request_target {
                     "/" => String::from("HTTP/1.1 200 OK\r\n\r\n"),
+                    "/user-agent" => {
+                        let user_agent = buf_reader
+                            .find(|x| x.as_ref().unwrap().starts_with("User-Agent"))
+                            .unwrap()
+                            .unwrap();
+
+                        let response = user_agent.trim_start_matches("User-Agent: ");
+                        let response_length = response.len();
+                        format!("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {response_length}\r\n\r\n{response}")
+                    }
                     _ if request_target.starts_with("/echo/") => {
                         let echo_response = request_target.trim_start_matches("/echo/");
                         let echo_response_length = echo_response.len();
